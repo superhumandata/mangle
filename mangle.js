@@ -4,22 +4,36 @@ var mangle = {
         if (target === 'app') {
             target = mangle.config.appContainer;
         }
-        document.getElementById(target).innerHTML = data();
+        if (typeof data ==='function'){
+            document.getElementById(target).innerHTML = data();
+        }
+        if (typeof data !=='function'){
+            document.getElementById(target).innerHTML = data;
+        }
+    },
+    getParams: function(){
+      var path = window.location.hash.substring(1);
+      var routePath = '';
+      routePath = mangle.routes['routes_' + mangle.state.currentRoute].path;
+      var paramStart = routePath.indexOf(':params');
+      routePath = routePath.substring(0,paramStart);
+      var currentPathLength = path.indexOf(routePath)+routePath.length
+      return path.substring(currentPathLength);
     },
     addSpinner: function(){
       document.body.className+=' wait';
     },
     removeSpinner: function(){
-      var rep = document.body.className.replace(/wait/g, '');
-      document.body.className = rep;
+      document.body.className.replace(/wait/g, '');
+	  document.body.className=document.body.className.replace(/wait/g, '');
     },
     dataMap: function(data,map) {
       data = data.map(map);
       data = data.join('');
       return data;
     },
-    reduce: function(arr){
-      let val = arr.reduce(function(a, b) {
+    dataReduce: function(arr){
+      var val = arr.reduce(function(a, b) {
         return a + b;
       });
       return val;
@@ -198,6 +212,8 @@ var mangle = {
 
     routes: {},
 
+	views: {},
+
     userFunctions: {},
 
     route: function(f) {
@@ -222,10 +238,20 @@ var mangle = {
         };
         var currentRoute = {};
         var verifyRoute = function(item, index) {
-            if (item.path === window.location.hash.substring(1)) {
-              //FIX THIS IT IS CURRENTLY SETTING THIS TO BE THE LAST ROUTE
+            var path2 = '';
+            path2 = window.location.hash.substring(1);
+            if (item.path.match(/:.*/)){
+              var path3 = '';
+              path3 = item.path;
+              var paramStart = path3.indexOf('/:params');
+              path3 = path3.substring(0,paramStart);
+              var regex = new RegExp( path3 + '\/.*' );
+              if(path2.match(regex)){
                 currentRoute = item.route
-                    //mangle.route(mangle.routes[currentRoute.route]);
+              }
+            }
+            else if (item.path === path2) {
+              currentRoute = item.route
             }
         };
         var resolveRoute = function() {
@@ -242,7 +268,6 @@ var mangle = {
 
         window.onhashchange = function() {
           currentRoute={};
-          routeListLoop(0);
           routeList.map(verifyRoute);
           resolveRoute();
         }
